@@ -1,5 +1,7 @@
 """Methods to compare the real and synthetic data for single-table."""
 
+import warnings
+
 from sdmetrics import visualization
 from sdmetrics.reports.single_table.diagnostic_report import DiagnosticReport
 from sdmetrics.reports.single_table.quality_report import QualityReport
@@ -9,7 +11,7 @@ from sdv.evaluation._utils import _prepare_data_visualization
 from sdv.metadata.metadata import Metadata
 
 
-def evaluate_quality(real_data, synthetic_data, metadata, verbose=True):
+def _evaluate_quality(real_data, synthetic_data, metadata, verbose=True):
     """Evaluate the quality of the synthetic data.
 
     Args:
@@ -35,7 +37,7 @@ def evaluate_quality(real_data, synthetic_data, metadata, verbose=True):
     return quality_report
 
 
-def run_diagnostic(real_data, synthetic_data, metadata, verbose=True):
+def _run_diagnostic(real_data, synthetic_data, metadata, verbose=True):
     """Run diagnostic report for the synthetic data.
 
     Args:
@@ -165,3 +167,29 @@ def get_column_pair_plot(
     )
 
     return visualization.get_column_pair_plot(real_data, synthetic_data, column_names, plot_type)
+
+
+DEPRECATED_EVALUATION_FUNCTIONS = {
+    'evaluate_quality': _evaluate_quality,
+    'run_diagnostic': _run_diagnostic,
+}
+
+PLOT_FUNCTIONS = {
+    'get_column_pair_plot': get_column_pair_plot,
+    'get_column_plot': get_column_plot,
+}
+
+
+def __getattr__(name):
+    if name in DEPRECATED_EVALUATION_FUNCTIONS:
+        warnings.warn(
+            "The evaluation functions are now accessible via the 'sdv.evaluation' module.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return DEPRECATED_EVALUATION_FUNCTIONS.get(name)
+
+    if name not in PLOT_FUNCTIONS:
+        raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+    return PLOT_FUNCTIONS.get(name)
